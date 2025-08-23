@@ -3,10 +3,14 @@
  * Logic bisnis aplikasi untuk User
  */
 import { UserRepository } from '../../domain/repositories/UserRepository';
+import { CategoryUserRepository } from '../../domain/repositories/CategoryUserRepository';
 import { User, CreateUserDTO, UpdateUserDTO } from '../../domain/entities/User'; 
 
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    private userRepository: UserRepository,
+    private categoryUserRepository: CategoryUserRepository
+  ) {}
 
   /*
    * Ambil semua user dengan pagination
@@ -42,6 +46,25 @@ export class UserService {
   }
 
   /*
+   * Ambil users by category user id
+   */
+  async getUsersByCategoryUserId(categoryUserId: string, page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+    const users = await this.userRepository.findByCategoryUserId(categoryUserId, limit, offset);
+    const total = await this.userRepository.countByCategoryUserId(categoryUserId);
+    
+    return {
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /*
    * Buat user baru
    */
   async createUser(userData: CreateUserDTO): Promise<User> {
@@ -49,6 +72,14 @@ export class UserService {
     const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
       throw new Error('Email sudah digunakan');
+    }
+
+    // Cek category user exist jika ada
+    if (userData.categoryUserId) {
+      const categoryUser = await this.categoryUserRepository.findById(userData.categoryUserId);
+      if (!categoryUser) {
+        throw new Error('Kategori user tidak ditemukan');
+      }
     }
 
     return this.userRepository.create(userData);
@@ -69,6 +100,14 @@ export class UserService {
       const emailExists = await this.userRepository.findByEmail(userData.email);
       if (emailExists) {
         throw new Error('Email sudah digunakan');
+      }
+    }
+
+    // Cek category user exist jika ada
+    if (userData.categoryUserId) {
+      const categoryUser = await this.categoryUserRepository.findById(userData.categoryUserId);
+      if (!categoryUser) {
+        throw new Error('Kategori user tidak ditemukan');
       }
     }
 
