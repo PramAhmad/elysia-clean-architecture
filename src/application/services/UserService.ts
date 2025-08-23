@@ -22,7 +22,6 @@ export class UserService {
     // Cek cache dulu
     let cachedData = await cache.get(cacheKey);
     if (cachedData) {
-      console.log('📦 Data retrieved from cache');
       return cachedData;
     }
 
