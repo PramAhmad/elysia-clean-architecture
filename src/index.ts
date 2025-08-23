@@ -8,20 +8,26 @@ import { swagger } from "@elysiajs/swagger";
 
 // Infrastructure Layer
 import { PostgresUserRepository } from "./infrastructure/repositories/PostgresUserRepository";
+import { PostgresCategoryUserRepository } from "./infrastructure/repositories/PostgresCategoryUserRepository";
 
 // Application Layer  
 import { UserService } from "./application/services/UserService";
+import { CategoryUserService } from "./application/services/CategoryUserService";
 
 // Presentation Layer
 import { createUserController } from "./presentation/controllers/UserController";
+import { createCategoryUserController } from "./presentation/controllers/CategoryUserController";
 
 /*
  * Dependency Injection
  * Setup semua dependencies secara manual (simple DI)
  */
 const userRepository = new PostgresUserRepository();
-const userService = new UserService(userRepository);
+const categoryUserRepository = new PostgresCategoryUserRepository();
+const userService = new UserService(userRepository, categoryUserRepository);
+const categoryUserService = new CategoryUserService(categoryUserRepository);
 const userController = createUserController(userService);
+const categoryUserController = createCategoryUserController(categoryUserService);
 
 /*
  * Setup Elysia App
@@ -36,7 +42,8 @@ const app = new Elysia()
         description: 'API dengan clean architecture pattern'
       },
       tags: [
-        { name: 'Users', description: 'User management endpoints' }
+        { name: 'Users', description: 'User management endpoints' },
+        { name: 'Category Users', description: 'Category User management endpoints' }
       ]
     }
   }))
@@ -51,9 +58,10 @@ const app = new Elysia()
   }))
   
   /*
-   * Register User routes
+   * Register routes
    */
   .use(userController)
+  .use(categoryUserController)
   
   /*
    * Error handler
