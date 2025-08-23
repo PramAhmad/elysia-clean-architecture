@@ -14,12 +14,18 @@ export function createUserController(userService: UserService) {
     .get('/', async ({ query }) => {
       const page = parseInt(query.page || '1');
       const limit = parseInt(query.limit || '10');
+      const categoryUserId = query.categoryUserId;
+      
+      if (categoryUserId) {
+        return userService.getUsersByCategoryUserId(categoryUserId, page, limit);
+      }
       
       return userService.getUsers(page, limit);
     }, {
       query: t.Object({
         page: t.Optional(t.String()),
-        limit: t.Optional(t.String())
+        limit: t.Optional(t.String()),
+        categoryUserId: t.Optional(t.String())
       })
     })
 
@@ -57,7 +63,8 @@ export function createUserController(userService: UserService) {
       body: t.Object({
         name: t.String(),
         email: t.String(),
-        password: t.String()
+        password: t.String(),
+        categoryUserId: t.Optional(t.String())
       })
     })
 
@@ -88,7 +95,8 @@ export function createUserController(userService: UserService) {
       body: t.Object({
         name: t.Optional(t.String()),
         email: t.Optional(t.String()),
-        password: t.Optional(t.String())
+        password: t.Optional(t.String()),
+        categoryUserId: t.Optional(t.String())
       })
     })
 
