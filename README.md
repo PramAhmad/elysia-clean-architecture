@@ -72,23 +72,29 @@ src/
 ├── index.ts                      # Entry point aplikasi
 ├── application/                  # APPLICATION LAYER
 │   └── services/
-│       └── UserService.ts        # Business logic & use cases
+│       ├── UserService.ts        # User business logic & use cases
+│       └── CategoryUserService.ts # CategoryUser business logic & use cases
 ├── domain/                       # DOMAIN LAYER (Core Business)
 │   ├── entities/
-│   │   └── User.ts              # Domain entities & DTOs
+│   │   ├── User.ts              # User entity & DTOs (dengan relasi ke CategoryUser)
+│   │   └── CategoryUser.ts      # CategoryUser entity & DTOs
 │   └── repositories/
-│       └── UserRepository.ts     # Repository contracts/interfaces
+│       ├── UserRepository.ts     # User repository contract
+│       └── CategoryUserRepository.ts # CategoryUser repository contract
 ├── infrastructure/               # INFRASTRUCTURE LAYER
 │   ├── database/
 │   │   ├── connection.ts        # Database connection setup
 │   │   └── migrations/
 │   │       ├── run.ts           # Migration runner
-│   │       └── users.ts         # User table migration
+│   │       ├── category_users.ts # CategoryUser table migration  
+│   │       └── users.ts         # User table migration (dengan FK ke category_users)
 │   └── repositories/
-│       └── PostgresUserRepository.ts # Repository implementation
+│       ├── PostgresUserRepository.ts # User repository implementation
+│       └── PostgresCategoryUserRepository.ts # CategoryUser repository implementation
 └── presentation/                 # PRESENTATION LAYER
     └── controllers/
-        └── UserController.ts     # HTTP controllers & routes
+        ├── UserController.ts     # User HTTP controllers & routes
+        └── CategoryUserController.ts # CategoryUser HTTP controllers & routes
 ```
 
 ## 🏛️ Layer Architecture
@@ -207,6 +213,11 @@ DB_PASSWORD=password
 PORT=3000
 ```
 
+Atau Copy file .env.example
+```bash
+cp .env.example .env
+```
+
 ## �️ Database Migration
 
 Jalankan migration untuk membuat table users:
@@ -215,14 +226,25 @@ Jalankan migration untuk membuat table users:
 bun run db:migrate
 ```
 
-File migration ada di `src/infrastructure/database/migrations/users.ts` yang akan membuat table:
+File migration ada di `src/infrastructure/database/migrations` 
+yang akan membuat table:
 
 ```sql
+CREATE TABLE category_users (
+  id UUID PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
+  category_user_id UUID,
+  FOREIGN KEY (category_user_id) REFERENCES category_users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -251,11 +273,18 @@ Swagger documentation tersedia di: `http://localhost:3000/swagger`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | Health check |
-| GET | `/users` | Get all users (dengan pagination) |
+| **Users** | | |
+| GET | `/users` | Get all users (dengan pagination & filter by category) |
 | GET | `/users/:id` | Get user by ID |
 | POST | `/users` | Create new user |
 | PUT | `/users/:id` | Update user |
 | DELETE | `/users/:id` | Delete user |
+| **Category Users** | | |
+| GET | `/category-users` | Get all category users (dengan pagination) |
+| GET | `/category-users/:id` | Get category user by ID |
+| POST | `/category-users` | Create new category user |
+| PUT | `/category-users/:id` | Update category user |
+| DELETE | `/category-users/:id` | Delete category user |
 
 ## 🧪 Contoh Penggunaan API
 
@@ -264,37 +293,58 @@ Swagger documentation tersedia di: `http://localhost:3000/swagger`
 curl http://localhost:3000/
 ```
 
-### 2. Create User
+### 2. Category Users
+
+#### Create Category User
 ```bash
-curl -X POST http://localhost:3000/users \
-  -H "Content-Type: application/json" \
+curl -X POST http://localhost:3000/category-users 
+  -H "Content-Type: application/json" 
   -d '{
-    "name": "Pramu",
-    "email": "pramu@example.com", 
-    "password": "password123"
+    "name": "Admin",
+    "description": "Administrator users"
   }'
 ```
 
-### 3. Get All Users (dengan pagination)
+#### Get All Category Users
 ```bash
-curl "http://localhost:3000/users?page=1&limit=10"
+curl "http://localhost:3000/category-users?page=1&limit=10"
 ```
 
-### 4. Get User by ID
+### 3. Users
+
+#### Create User (dengan category)
+```bash
+curl -X POST http://localhost:3000/users 
+  -H "Content-Type: application/json" 
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com", 
+    "password": "password123",
+    "categoryUserId": "uuid-of-category"
+  }'
+```
+
+#### Get All Users (dengan filter by category)
+```bash
+curl "http://localhost:3000/users?page=1&limit=10&categoryUserId=uuid-of-category"
+```
+
+#### Get User by ID
 ```bash
 curl http://localhost:3000/users/{user-id}
 ```
 
-### 5. Update User
+#### Update User
 ```bash
-curl -X PUT http://localhost:3000/users/{user-id} \
-  -H "Content-Type: application/json" \
+curl -X PUT http://localhost:3000/users/{user-id} 
+  -H "Content-Type: application/json" 
   -d '{
-    "name": "Jane Doe Updated"
+    "name": "Jane Doe Updated",
+    "categoryUserId": "new-category-uuid"
   }'
 ```
 
-### 6. Delete User
+#### Delete User
 ```bash
 curl -X DELETE http://localhost:3000/users/{user-id}
 ```
