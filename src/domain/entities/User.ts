@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   password: string;
+  categoryUserId?: string; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,7 @@ export interface CreateUserDTO {
   name: string;
   email: string;
   password: string;
+  categoryUserId?: string; 
 }
 
 /**
@@ -42,4 +44,5 @@ export interface UpdateUserDTO {
   name?: string;
   email?: string;
   password?: string;
+  categoryUserId?: string;
 }
