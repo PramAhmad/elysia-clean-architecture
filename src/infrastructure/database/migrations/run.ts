@@ -2,12 +2,14 @@
  * Migration Runner
  * Jalankan semua migrations
  */
+import { createCategoryUsersTable } from './category_users';
 import { createUsersTable } from './users';
 
 async function runMigrations() {
   try {
     console.log('🚀 Menjalankan migrations...');
     
+    await createCategoryUsersTable();
     await createUsersTable();
     
     console.log('✅ Semua migrations berhasil dijalankan');
